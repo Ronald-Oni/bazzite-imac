@@ -31,42 +31,51 @@ systemctl enable podman.socket
 # iMac 2017 Cirrus Audio-Treiber Setup
 # ==========================================
 
-#!/bin/bash
-set -e
-
 echo "=== Installing iMac Audio Driver ==="
 
-# 1. Ziel-Kernel-Version des Bazzite-Images ermitteln
+# Ziel-Kernel-Version im Bazzite-Container ermitteln
 KERNEL_VER=$(ls /lib/modules | sort -V | tail -n 1)
 echo "Ziel-Kernel: ${KERNEL_VER}"
 
-# 2. Build-Pakete für das Image installieren
-dnf install -y gcc make git patch kernel-devel-${KERNEL_VER} || dnf install -y gcc make git patch kernel-devel
+# Build-Tools und passende Kernel-Header über dnf5 installieren
+dnf5 install -y gcc make git patch kernel-devel-${KERNEL_VER} || dnf5 install -y gcc make git patch kernel-devel
 
-# 3. Repository klonen
+# Symlink prüfen und ggf. setzen, falls die Header unter /usr/src/kernels liegen
+KERNEL_DIR="/lib/modules/${KERNEL_VER}/build"
+if [ ! -d "${KERNEL_DIR}" ]; then
+    ALT_DIR=$(ls -d /usr/src/kernels/${KERNEL_VER}* 2>/dev/null | head -n 1)
+    if [ -n "${ALT_DIR}" ]; then
+        echo "Erstelle Symlink: ${KERNEL_DIR} -> ${ALT_DIR}"
+        ln -snf "${ALT_DIR}" "${KERNEL_DIR}"
+    fi
+fi
+
+# Driver-Repository klonen
 cd /tmp
+rm -rf snd_hda_macbookpro
 git clone https://github.com/davidjo/snd_hda_macbookpro.git
 cd snd_hda_macbookpro
 
-# 4. KVER und KDIR explizit an make übergeben, um uname -r des CI-Runners zu überschreiben
-make KVER="${KERNEL_VER}" KDIR="/lib/modules/${KERNEL_VER}/build"
+# Kompilieren mit den exakten Makefile-Variablen des Repositories
+echo "Kompiliere Treiber für Kernel ${KERNEL_VER}..."
+make KERNELRELEASE="${KERNEL_VER}" KERNEL_DIR="${KERNEL_DIR}"
 
-# 5. Treiber in das Kernel-Verzeichnis des Images kopieren
+# Kompiliertes Kernel-Modul (.ko) in das Updates-Verzeichnis kopieren
 MODULE_DIR="/usr/lib/modules/${KERNEL_VER}/updates"
 mkdir -p "${MODULE_DIR}"
-find . -name "snd-hda-codec-cs8409.ko" -exec cp {} "${MODULE_DIR}/" \;
+find . -name "*.ko" -exec cp {} "${MODULE_DIR}/" \;
 
-# 6. Rechte vergeben und Modulabhängigkeiten für den Ziel-Kernel bauen
+# Rechte setzen und Modulabhängigkeiten für den Bazzite-Kernel aktualisieren
 chmod 644 "${MODULE_DIR}"/*.ko
 depmod -a "${KERNEL_VER}"
 
-# 7. Autostart-Eintrag anlegen
+# Autostart-Eintrag im schreibgeschützten Systempfad hinterlegen
 mkdir -p /usr/lib/modules-load.d/
 echo "snd-hda-codec-cs8409" > /usr/lib/modules-load.d/snd_hda_macbookpro.conf
 
-# 8. Aufräumen
-dnf remove -y gcc make git patch kernel-devel
-dnf clean all
+# Temporäre Dateien und Build-Tools entfernen (hält das Image schlank)
+dnf5 remove -y gcc make git patch kernel-devel
+dnf5 clean all
 rm -rf /tmp/snd_hda_macbookpro
 
 echo "=== Audio Driver Installation Complete ==="
