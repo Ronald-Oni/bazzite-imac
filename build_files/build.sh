@@ -30,35 +30,38 @@ systemctl enable podman.socket
 # ==========================================
 # iMac 2017 Cirrus Audio-Treiber Setup
 # ==========================================
-echo "=== Installing iMac Audio Driver ==="
 
-# 1. Benötigte Build-Tools direkt installieren
-rpm-ostree install gcc make git patch kernel-devel
+# 1. Ziel-Kernel-Version des Bazzite-Images ermitteln (statt Host-Kernel des CI-Runners)
+KERNEL_VER=$(ls /lib/modules | sort -V | tail -n 1)
+echo "Ziel-Kernel: ${KERNEL_VER}"
 
-# 2. In das temporäre Verzeichnis wechseln
+# 2. Build-Pakete mit dnf installieren (rpm-ostree funktioniert nicht im Container-Build Context)
+dnf install -y gcc make git patch kernel-devel-${KERNEL_VER} || dnf install -y gcc make git patch kernel-devel
+
+# 3. Repository klonen
 cd /tmp
-
-# 3. Das KORREKTE, VOLLSTÄNDIGE Repository klonen
-# Hier steht nun die vollständige URL zum Treiber von davidjo:
 git clone https://github.com/davidjo/snd_hda_macbookpro.git
-
-# 4. In den Ordner wechseln und kompilieren
 cd snd_hda_macbookpro
-make
 
-# 5. Ordnerstrukturen im Image anlegen und Treiber kopieren
-mkdir -p /usr/lib/modules/updates/
-cp snd-hda-codec-cs8409.ko /usr/lib/modules/updates/
+# 4. Kompilieren mit explizitem Pfad zum Container-Kernel
+make KDIR=/lib/modules/${KERNEL_VER}/build
 
-# 6. Rechte vergeben, damit der Kernel das Modul akzeptiert
-chmod 644 /usr/lib/modules/updates/snd-hda-codec-cs8409.ko
+# 5. Treiber in das Kernel-Verzeichnis des Images kopieren
+MODULE_DIR="/usr/lib/modules/${KERNEL_VER}/updates"
+mkdir -p "${MODULE_DIR}"
+find . -name "snd-hda-codec-cs8409.ko" -exec cp {} "${MODULE_DIR}/" \;
 
-# 7. Autostart-Eintrag für den Treiber erstellen
-mkdir -p /etc/modules-load.d/
-echo "snd-hda-codec-cs8409" > /etc/modules-load.d/snd_hda_macbookpro.conf
+# 6. Rechte vergeben und Modulabhängigkeiten für den Ziel-Kernel bauen
+chmod 644 "${MODULE_DIR}"/*.ko
+depmod -a "${KERNEL_VER}"
 
-# 8. Kernel-Modul-Abhängigkeiten aktualisieren
-depmod -a
+# 7. Autostart-Eintrag anlegen
+mkdir -p /usr/lib/modules-load.d/
+echo "snd-hda-codec-cs8409" > /usr/lib/modules-load.d/snd_hda_macbookpro.conf
+
+# 8. Build-Tools entfernen (reduziert die Image-Größe)
+dnf remove -y gcc make git patch kernel-devel
+dnf clean all
+rm -rf /tmp/snd_hda_macbookpro
 
 echo "=== Audio Driver Installation Complete ==="
-
