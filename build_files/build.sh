@@ -26,32 +26,39 @@ dnf5 install -y tmux
 
 systemctl enable podman.socket
 
+
 # ==========================================
 # iMac 2017 Cirrus Audio-Treiber Setup
 # ==========================================
 echo "=== Installing iMac Audio Driver ==="
 
-# 1. System-Pakete aktualisieren und Build-Tools installieren
-rpm-ostree install --target-arch x86_64 gcc make git patch kernel-devel || true
+# 1. Benötigte Build-Tools direkt installieren
+rpm-ostree install gcc make git patch kernel-devel
 
-# 2. In ein beschreibbares temporäres Verzeichnis wechseln, klonen und bauen
+# 2. In das temporäre Verzeichnis wechseln
 cd /tmp
-git clone https://github.com
+
+# 3. Das KORREKTE, VOLLSTÄNDIGE Repository klonen
+# Hier steht nun die vollständige URL zum Treiber von davidjo:
+git clone https://github.com/davidjo/snd_hda_macbookpro.git
+
+# 4. In den Ordner wechseln und kompilieren
 cd snd_hda_macbookpro
 make
 
-# 3. Ordnerstrukturen im Image sicherstellen und Treiber kopieren
+# 5. Ordnerstrukturen im Image anlegen und Treiber kopieren
 mkdir -p /usr/lib/modules/updates/
 cp snd-hda-codec-cs8409.ko /usr/lib/modules/updates/
 
-# 4. Rechte vergeben, damit der Kernel das Modul akzeptiert
+# 6. Rechte vergeben, damit der Kernel das Modul akzeptiert
 chmod 644 /usr/lib/modules/updates/snd-hda-codec-cs8409.ko
 
-# 5. Ladebefehl für den Systemstart hinterlegen
+# 7. Autostart-Eintrag für den Treiber erstellen
 mkdir -p /etc/modules-load.d/
 echo "snd-hda-codec-cs8409" > /etc/modules-load.d/snd_hda_macbookpro.conf
 
-# 6. Kernel-Mappe auffrischen
+# 8. Kernel-Modul-Abhängigkeiten aktualisieren
 depmod -a
 
 echo "=== Audio Driver Installation Complete ==="
+
