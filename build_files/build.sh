@@ -31,11 +31,16 @@ systemctl enable podman.socket
 # iMac 2017 Cirrus Audio-Treiber Setup
 # ==========================================
 
-# 1. Ziel-Kernel-Version des Bazzite-Images ermitteln (statt Host-Kernel des CI-Runners)
+#!/bin/bash
+set -e
+
+echo "=== Installing iMac Audio Driver ==="
+
+# 1. Ziel-Kernel-Version des Bazzite-Images ermitteln
 KERNEL_VER=$(ls /lib/modules | sort -V | tail -n 1)
 echo "Ziel-Kernel: ${KERNEL_VER}"
 
-# 2. Build-Pakete mit dnf installieren (rpm-ostree funktioniert nicht im Container-Build Context)
+# 2. Build-Pakete für das Image installieren
 dnf install -y gcc make git patch kernel-devel-${KERNEL_VER} || dnf install -y gcc make git patch kernel-devel
 
 # 3. Repository klonen
@@ -43,8 +48,8 @@ cd /tmp
 git clone https://github.com/davidjo/snd_hda_macbookpro.git
 cd snd_hda_macbookpro
 
-# 4. Kompilieren mit explizitem Pfad zum Container-Kernel
-make KDIR=/lib/modules/${KERNEL_VER}/build
+# 4. KVER und KDIR explizit an make übergeben, um uname -r des CI-Runners zu überschreiben
+make KVER="${KERNEL_VER}" KDIR="/lib/modules/${KERNEL_VER}/build"
 
 # 5. Treiber in das Kernel-Verzeichnis des Images kopieren
 MODULE_DIR="/usr/lib/modules/${KERNEL_VER}/updates"
@@ -59,7 +64,7 @@ depmod -a "${KERNEL_VER}"
 mkdir -p /usr/lib/modules-load.d/
 echo "snd-hda-codec-cs8409" > /usr/lib/modules-load.d/snd_hda_macbookpro.conf
 
-# 8. Build-Tools entfernen (reduziert die Image-Größe)
+# 8. Aufräumen
 dnf remove -y gcc make git patch kernel-devel
 dnf clean all
 rm -rf /tmp/snd_hda_macbookpro
