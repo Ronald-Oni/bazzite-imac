@@ -25,3 +25,32 @@ dnf5 install -y tmux
 #### Example for enabling a System Unit File
 
 systemctl enable podman.socket
+
+# ==========================================
+# iMac 2017 Cirrus Audio-Treiber Setup
+# ==========================================
+echo "=== Installing iMac Audio Driver ==="
+
+# 1. Benötigte Build-Tools temporär installieren
+rpm-ostree install --target-arch x86_64 gcc make git patch kernel-devel
+
+# 2. Treiber herunterladen und kompilieren
+git clone https://github.com /tmp/snd_hda_macbookpro
+cd /tmp/snd_hda_macbookpro
+make
+
+# 3. Kompilierten Treiber an die richtige Stelle kopieren
+mkdir -p /usr/lib/modules/updates/
+cp snd-hda-codec-cs8409.ko /usr/lib/modules/updates/
+
+# 4. Autostart-Konfiguration für den Treiber anlegen
+mkdir -p /etc/modules-load.d/
+echo "snd-hda-codec-cs8409" > /etc/modules-load.d/snd_hda_macbookpro.conf
+
+# 5. Kernel-Abhängigkeiten aktualisieren
+depmod -a $(ls /usr/lib/modules/)
+
+# 6. Aufräumen: Build-Tools wieder entfernen, um das Image schlank zu halten
+rpm-ostree override remove gcc make git patch kernel-devel
+
+echo "=== Audio Driver Installation Complete ==="
