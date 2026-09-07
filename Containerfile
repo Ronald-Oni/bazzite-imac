@@ -3,7 +3,7 @@ COPY build_files /
 COPY system_files /system_files
 
 # Nutzt immer das aktuellste, stabile Bazzite-Image ohne fehleranfällige Hash-IDs
-FROM ghcr.io/ublue-os/bazzite:stable
+FROM ghcr.io/ublue-os/bazzite-deck:stable
 
 ### MODIFICATIONS
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
