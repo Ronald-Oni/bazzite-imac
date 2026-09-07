@@ -17,7 +17,7 @@ echo "=== Installing iMac Audio Driver ==="
 KERNEL_VER=$(ls /lib/modules | sort -V | tail -n 1)
 echo "Ziel-Kernel: ${KERNEL_VER}"
 
-# Build-Tools UND Download-Werkzeuge installieren (install.cirrus.driver.sh benötigt wget/tar/xz)
+# Build-Tools und Download-Werkzeuge installieren
 dnf5 install -y gcc make git patch wget tar xz bzip2 kernel-devel-${KERNEL_VER} || dnf5 install -y gcc make git patch wget tar xz bzip2 kernel-devel
 
 # Repository klonen
@@ -26,20 +26,23 @@ rm -rf snd_hda_macbookpro
 git clone https://github.com/davidjo/snd_hda_macbookpro.git
 cd snd_hda_macbookpro
 
-# Ausführrechte setzen und das offizielle Build-/Installationsskript mit dem Ziel-Kernel ausführen
+# FIX: Verhindert, dass das Makefile stumm depmod auf dem Host-Kernel aufruft
+sed -i 's/depmod -a/true/g' Makefile
+
+# Installer ausführen
 chmod +x install.cirrus.driver.sh
 ./install.cirrus.driver.sh -k "${KERNEL_VER}"
 
-# Überprüfen, ob die Kernel-Modul-Datei tatsächlich erzeugt wurde
+# Modulabhängigkeiten explizit für den Bazzite-Kernel aktualisieren
+depmod -a "${KERNEL_VER}"
+
+# Überprüfen, ob das Modul am Zielort liegt
 MODULE_FILE=$(find /usr/lib/modules/${KERNEL_VER} -name "snd-hda-codec-cs8409.ko*" | head -n 1)
 if [ -z "${MODULE_FILE}" ]; then
-    echo "ERROR: Kernel-Modul snd-hda-codec-cs8409.ko wurde nicht erstellt!"
+    echo "ERROR: Kernel-Modul snd-hda-codec-cs8409.ko wurde nicht gefunden!"
     exit 1
 fi
-echo "Modul erfolgreich erstellt unter: ${MODULE_FILE}"
-
-# Modulabhängigkeiten für den Ziel-Kernel aktualisieren
-depmod -a "${KERNEL_VER}"
+echo "Modul erfolgreich verifiziert: ${MODULE_FILE}"
 
 # Autostart-Eintrag für Bazzite anlegen
 mkdir -p /usr/lib/modules-load.d/
