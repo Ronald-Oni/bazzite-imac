@@ -54,3 +54,11 @@ dnf5 clean all
 rm -rf /tmp/snd_hda_macbookpro
 
 echo "=== Audio Driver Installation Complete ==="
+
+# Broadcom WLAN-Treiber für Apple-Hardware beim Systemstart erzwingen
+mkdir -p /usr/lib/modules-load.d/
+echo "brcmfmac" > /usr/lib/modules-load.d/broadcom-wifi.conf
+
+# Bluetooth ERTM-Fix
+mkdir -p /usr/lib/modprobe.d/
+echo "options bluetooth disable_ertm=1" > /usr/lib/modprobe.d/bluetooth-ertm.conf
