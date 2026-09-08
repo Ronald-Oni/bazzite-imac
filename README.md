@@ -1,6 +1,6 @@
 # Bazzite for iMac
 
-This repository is based on the official Bazzite Universal Blue Project [bootc](https://github.com/bootc-dev/bootc) image. It adds specific driver support for the iMac 2017 - 2019 hardware.
+This repository is based on the official Bazzite-Deck image from Universal Blue Project [bootc](https://github.com/bootc-dev/bootc). It adds specific driver support for the iMac 2017 - 2019 hardware.
 Especcially the following Fixes are implemented:
 - Audio driver fror Audio Chip Cirrus Logic (CS4208 or CS8409)
 - W-Lan driver for Broadcom-Chips (BCM43602) in the iMac will automatically loaded in boot sequence
@@ -18,9 +18,10 @@ If you have questions about this template after following the instructions, try 
 # How to Use
 
 It is recommended to select and install a original Bazzite image from usb drive which matches best to your hardware and demands first. Select your prefernece here:
-https://docs.bazzite.gg/General/Installation_Guide/
+https://bazzite.gg/#image-picker
 
 Once the iMac starts up for the first time, run the rebase command to switch to this Version which included fixes:
+
 sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/ronald-oni/bazzite-imac:latest
 
 
