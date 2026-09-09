@@ -62,3 +62,18 @@ echo "brcmfmac" > /usr/lib/modules-load.d/broadcom-wifi.conf
 # Bluetooth ERTM-Fix
 mkdir -p /usr/lib/modprobe.d/
 echo "options bluetooth disable_ertm=1" > /usr/lib/modprobe.d/bluetooth-ertm.conf
+
+# ==========================================
+# 4. AMD Radeon Overclocking & LACT GPU-Tool
+# ==========================================
+# Kernel-Argument für Overclocking/Undervolting fest im Image verankern
+mkdir -p /usr/lib/bootc/kargs.d
+cat <<EOF > /usr/lib/bootc/kargs.d/10-amdgpu.toml
+kargs = ["amdgpu.ppfeaturemask=0xffffffff"]
+EOF
+
+# LACT (Linux AMD Control Application) installieren und Hintergrunddienst aktivieren
+dnf5 copr enable -y ilya-zlobintsev/LACT
+dnf5 install -y lact
+systemctl enable lactd
+dnf5 copr disable -y ilya-zlobintsev/LACT

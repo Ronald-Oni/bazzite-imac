@@ -5,6 +5,7 @@ Especcially the following Fixes are implemented:
 - Audio driver fror Audio Chip Cirrus Logic (CS4208 or CS8409)
 - W-Lan driver for Broadcom-Chips (BCM43602) in the iMac will automatically loaded in boot sequence
 - Bluetooth fix deactivates ERTM (Enhanced Retransmission Mode) to allow connection to equipment like X-Box gamecontroller without connection abort.
+- Activation of AMD Radeon Overclocking ability & LACT GPU-Tool installation
 
 Because this repository is linked to the original Bazzite repository, updates are automatically applied and rolled out to your system. All included fixes are retained.
 
