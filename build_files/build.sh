@@ -72,8 +72,11 @@ cat <<EOF > /usr/lib/bootc/kargs.d/10-amdgpu.toml
 kargs = ["amdgpu.ppfeaturemask=0xffffffff"]
 EOF
 
-# LACT (Linux AMD Control Application) installieren und Hintergrunddienst aktivieren
-dnf5 copr enable -y ilya-zlobintsev/LACT
-dnf5 install -y lact
+# LACT direkt aus den offiziellen GitHub-Releases installieren (umgeht COPR 404-Fehler)
+LACT_URL=$(curl -s https://api.github.com/repos/ilya-zlobintsev/LACT/releases/latest | grep "browser_download_url" | grep "fedora" | grep "x86_64" | head -n 1 | cut -d '"' -f 4)
+if [ -z "${LACT_URL}" ]; then
+    LACT_URL="https://github.com/ilya-zlobintsev/LACT/releases/download/v0.10.1/lact-0.10.1-0.x86_64.fedora-44.rpm"
+fi
+
+dnf5 install -y "${LACT_URL}"
 systemctl enable lactd
-dnf5 copr disable -y ilya-zlobintsev/LACT
