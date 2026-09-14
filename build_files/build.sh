@@ -55,9 +55,32 @@ rm -rf /tmp/snd_hda_macbookpro
 
 echo "=== Audio Driver Installation Complete ==="
 
-# Broadcom WLAN-Treiber für Apple-Hardware beim Systemstart erzwingen
+# ==========================================
+# 3. Universeller WLAN Hardware-Fix (iMac 2017, 2019 & MacBooks)
+# ==========================================
+echo "=== Installing Universal Apple Wi-Fi Firmware ==="
+
+# Git-LFS für den Download großer Binärdateien bereitstellen
+dnf5 install -y git-lfs
+
+cd /tmp
+rm -rf Apple-Firmware
+git lfs install
+git clone https://github.com/AdityaGarg8/Apple-Firmware.git
+
+# Sämtliche Apple Broadcom-Firmwaredateien (BCM43602, BCM4364 etc.) ins Image kopieren
+mkdir -p /usr/lib/firmware/brcm
+cp -r /tmp/Apple-Firmware/lib/firmware/brcm/* /usr/lib/firmware/brcm/
+
+# Inkompatiblen 'wl' Treiber sperren & Standard 'brcmfmac' laden
+mkdir -p /usr/lib/modprobe.d/
+echo "blacklist wl" > /usr/lib/modprobe.d/broadcom-wl-blacklist.conf
+
 mkdir -p /usr/lib/modules-load.d/
 echo "brcmfmac" > /usr/lib/modules-load.d/broadcom-wifi.conf
+
+# Aufräumen
+rm -rf /tmp/Apple-Firmware
 
 # Bluetooth ERTM-Fix
 mkdir -p /usr/lib/modprobe.d/
