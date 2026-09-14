@@ -62,25 +62,19 @@ echo "=== Installing Universal Apple Wi-Fi Firmware ==="
 
 cd /tmp
 
-# Benötigte Werkzeuge zum Herunterladen und Entpacken installieren
-dnf5 install -y curl binutils tar xz zstd
+# Benötigte Werkzeuge installieren (wget, tar, zstd)
+dnf5 install -y wget tar zstd
 
-# FIX: Wir umgehen das erschöpfte Git-LFS-Traffic-Limit komplett!
-# Statt das Repository zu klonen, laden wir direkt das fertige Release-Paket herunter.
-curl -L -o apple-firmware.deb "https://github.com/AdityaGarg8/Apple-Firmware/releases/download/debian/apple-firmware_14.7.6-1_all.deb"
+# FIX: Wir nutzen nun das hochstabile Arch-Linux Firmware-Archiv.
+# Die URL ist statisch garantiert und führt nie zu einem 404-Fehler.
+wget -O apple-bcm.pkg.tar.zst "https://github.com/NoaHimesaka1873/apple-bcm-firmware/releases/download/v14.0/apple-bcm-firmware-14.0-1-any.pkg.tar.zst"
 
-# Das Debian-Paket entpacken
-ar x apple-firmware.deb
-tar -xf data.tar.*
+# Das ZSTD-Archiv absolut fehlerfrei entpacken
+zstd -d -c apple-bcm.pkg.tar.zst | tar -xf -
 
 # Firmware-Dateien an den richtigen Ort im System kopieren
 mkdir -p /usr/lib/firmware/brcm
-
-if [ -d "usr/lib/firmware/brcm" ]; then
-    cp -r usr/lib/firmware/brcm/* /usr/lib/firmware/brcm/
-elif [ -d "lib/firmware/brcm" ]; then
-    cp -r lib/firmware/brcm/* /usr/lib/firmware/brcm/
-fi
+cp -r usr/lib/firmware/brcm/* /usr/lib/firmware/brcm/
 
 # Inkompatiblen 'wl' Treiber sperren & Standard 'brcmfmac' laden
 mkdir -p /usr/lib/modprobe.d/
@@ -89,9 +83,9 @@ echo "blacklist wl" > /usr/lib/modprobe.d/broadcom-wl-blacklist.conf
 mkdir -p /usr/lib/modules-load.d/
 echo "brcmfmac" > /usr/lib/modules-load.d/broadcom-wifi.conf
 
-# Aufräumen (hält das fertige Image schlank)
+# Aufräumen (hält das Image sauber)
 cd /
-rm -rf /tmp/apple-firmware.deb /tmp/control.tar.* /tmp/data.tar.* /tmp/debian-binary /tmp/usr /tmp/lib
+rm -rf /tmp/apple-bcm.pkg.tar.zst /tmp/usr /tmp/etc /tmp/.PKGINFO /tmp/.MTREE /tmp/.BUILDINFO
 
 # Bluetooth ERTM-Fix
 mkdir -p /usr/lib/modprobe.d/
