@@ -60,10 +60,16 @@ echo "=== Audio Driver Installation Complete ==="
 # ==========================================
 echo "=== Installing Universal Apple Wi-Fi Firmware ==="
 
+# FIX 1: Zurück in den /tmp-Ordner wechseln, da das Audio-Verzeichnis gelöscht wurde
+cd /tmp
+
 # Git-LFS für den Download großer Binärdateien bereitstellen
 dnf5 install -y git-lfs
 
-cd /tmp
+# FIX 2: Fehlende Ordnerstruktur für Git LFS im Container simulieren
+mkdir -p /root
+touch /root/.gitconfig
+
 rm -rf Apple-Firmware
 git lfs install
 git clone https://github.com/AdityaGarg8/Apple-Firmware.git
@@ -79,7 +85,8 @@ echo "blacklist wl" > /usr/lib/modprobe.d/broadcom-wl-blacklist.conf
 mkdir -p /usr/lib/modules-load.d/
 echo "brcmfmac" > /usr/lib/modules-load.d/broadcom-wifi.conf
 
-# Aufräumen
+# Aufräumen und Verzeichnis verlassen, um Folgefehler zu vermeiden
+cd /
 rm -rf /tmp/Apple-Firmware
 
 # Bluetooth ERTM-Fix
