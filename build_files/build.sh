@@ -62,13 +62,13 @@ echo "=== Installing Universal Apple Wi-Fi Firmware ==="
 
 cd /tmp
 
-# Git-LFS für den Download großer Binärdateien bereitstellen
+# Git-LFS installieren (konfiguriert sich automatisch im Hintergrund)
 dnf5 install -y git-lfs
 
 rm -rf Apple-Firmware
-# HOME=/tmp zwingt Git dazu, seine Konfigurationsdateien im temporären Ordner anzulegen,
-# anstatt auf das gesperrte /root Verzeichnis zuzugreifen.
-HOME=/tmp git clone https://github.com/AdityaGarg8/Apple-Firmware.git
+
+# Klon-Befehl (GIT_TERMINAL_PROMPT=0 verhindert, dass Git nach Passwörtern fragt)
+env GIT_TERMINAL_PROMPT=0 git clone https://github.com/AdityaGarg8/Apple-Firmware.git
 
 # Sämtliche Apple Broadcom-Firmwaredateien (BCM43602, BCM4364 etc.) ins Image kopieren
 mkdir -p /usr/lib/firmware/brcm
